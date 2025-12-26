@@ -8,70 +8,85 @@
 <style>
 body {
   margin: 0;
-  height: 100vh;
-  background: #111;
+  background: black;
   color: white;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
+  height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
-#logo {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 90px;
-}
-
-#ruleta {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: gray;
-  margin-bottom: 30px;
+#contenedor {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 32px;
+  gap: 40px;
 }
 
-#jugar {
+#logoBtn {
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: red;
-  color: white;
-  font-size: 42px;
-  border: none;
   cursor: pointer;
-  box-shadow: 0 0 25px red;
+  box-shadow: 0 0 25px white;
+  transition: transform 0.1s;
 }
 
-#conectar {
-  position: absolute;
-  bottom: 30px;
-  padding: 12px 30px;
-  font-size: 18px;
+#logoBtn:active {
+  transform: scale(0.95);
+}
+
+#resultado {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<img id="logo" src="logo.png">
-<h1>Semáforo de Lugones</h1>
+<div id="contenedor">
+  <!-- BOTÓN ÚNICO -->
+  <img src="logo.png" id="logoBtn" onclick="jugar()">
 
-<div id="ruleta">🎰</div>
-
-<button id="jugar" onclick="jugar()">JUGAR</button>
-<button id="conectar" onclick="conectar()">CONECTAR</button>
+  <!-- RESULTADO -->
+  <div id="resultado">---</div>
+</div>
 
 <audio id="ruletaSound" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3"></audio>
 
 <script>
 let device, characteristic;
+
+async function jugar() {
+  // vibración
+  if (navigator.vibrate) navigator.vibrate(200);
+
+  // sonido
+  document.getElementById("ruletaSound").play();
+
+  // conectar si no está conectado
+  if (!characteristic) {
+    await conectar();
+  }
+
+  // animación previa
+  const r = document.getElementById("resultado");
+  r.innerText = "🎰";
+  r.style.background = "#222";
+
+  // mandar orden al ESP32
+  characteristic.writeValue(
+    new TextEncoder().encode("J")
+  );
+}
 
 async function conectar() {
   device = await navigator.bluetooth.requestDevice({
@@ -89,37 +104,28 @@ async function conectar() {
   );
 
   characteristic.startNotifications();
-  characteristic.addEventListener('characteristicvaluechanged', evento);
-
-  alert("Conectado");
+  characteristic.addEventListener(
+    'characteristicvaluechanged',
+    mostrarResultado
+  );
 }
 
-function jugar() {
-  if (!characteristic) return;
+function mostrarResultado(e) {
+  const valor = new TextDecoder().decode(e.target.value);
+  const r = document.getElementById("resultado");
 
-  document.getElementById("ruleta").innerText = "🎰";
-  document.getElementById("ruleta").style.background = "gray";
-  document.getElementById("ruletaSound").play();
-
-  characteristic.writeValue(new TextEncoder().encode("J"));
-}
-
-function evento(e) {
-  const r = new TextDecoder().decode(e.target.value);
-  const div = document.getElementById("ruleta");
-
-  if (r === 'R') {
-    div.style.background = "red";
-    div.innerText = "ROJO";
+  if (valor === 'R') {
+    r.style.background = "red";
+    r.innerText = "ROJO";
   }
-  if (r === 'A') {
-    div.style.background = "yellow";
-    div.style.color = "black";
-    div.innerText = "AMARILLO";
+  if (valor === 'A') {
+    r.style.background = "yellow";
+    r.style.color = "black";
+    r.innerText = "AMARILLO";
   }
-  if (r === 'V') {
-    div.style.background = "green";
-    div.innerText = "VERDE";
+  if (valor === 'V') {
+    r.style.background = "green";
+    r.innerText = "VERDE";
   }
 }
 </script>
