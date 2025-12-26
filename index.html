@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -8,45 +7,68 @@
 
 <style>
 body {
+  margin: 0;
+  height: 100vh;
   background: #111;
   color: white;
   font-family: Arial;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#logo {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 90px;
 }
 
 #ruleta {
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  margin: 40px auto;
   background: gray;
+  margin-bottom: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 32px;
-  transition: background 0.3s;
 }
 
-button {
-  padding: 15px 30px;
+#jugar {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: red;
+  color: white;
+  font-size: 42px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 25px red;
+}
+
+#conectar {
+  position: absolute;
+  bottom: 30px;
+  padding: 12px 30px;
   font-size: 18px;
-  margin: 10px;
 }
 </style>
 </head>
 
 <body>
 
+<img id="logo" src="logo.png">
 <h1>Semáforo de Lugones</h1>
 
-<div id="ruleta">?</div>
+<div id="ruleta">🎰</div>
 
-<button onclick="conectar()">CONECTAR</button>
-<button onclick="jugar()">JUGAR</button>
+<button id="jugar" onclick="jugar()">JUGAR</button>
+<button id="conectar" onclick="conectar()">CONECTAR</button>
 
 <audio id="ruletaSound" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/button/sounds/button-4.mp3"></audio>
-<audio id="loseSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
 
 <script>
 let device, characteristic;
@@ -77,35 +99,27 @@ function jugar() {
 
   document.getElementById("ruleta").innerText = "🎰";
   document.getElementById("ruleta").style.background = "gray";
-
   document.getElementById("ruletaSound").play();
-  navigator.vibrate(300);
 
   characteristic.writeValue(new TextEncoder().encode("J"));
 }
 
 function evento(e) {
   const r = new TextDecoder().decode(e.target.value);
-
   const div = document.getElementById("ruleta");
 
   if (r === 'R') {
     div.style.background = "red";
-    div.innerText = "ROJO ❌";
-    document.getElementById("loseSound").play();
-    navigator.vibrate([200,100,200]);
+    div.innerText = "ROJO";
   }
   if (r === 'A') {
     div.style.background = "yellow";
     div.style.color = "black";
-    div.innerText = "AMARILLO 🔁";
-    navigator.vibrate(150);
+    div.innerText = "AMARILLO";
   }
   if (r === 'V') {
     div.style.background = "green";
-    div.innerText = "VERDE ✅";
-    document.getElementById("winSound").play();
-    navigator.vibrate([100,50,100,50,200]);
+    div.innerText = "VERDE";
   }
 }
 </script>
