@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -7,101 +8,105 @@
 
 <style>
 body {
-    margin: 0;
-    height: 100vh;
-    background: #111;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  background: #111;
+  color: white;
+  font-family: Arial;
+  text-align: center;
 }
 
-/* LOGO */
-#logo {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    width: 90px;
+#ruleta {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  margin: 40px auto;
+  background: gray;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  transition: background 0.3s;
 }
 
-/* TITULO */
-h1 {
-    margin-bottom: 40px;
-    text-align: center;
-}
-
-/* BOTON JUGAR */
-#jugar {
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: red;
-    color: white;
-    font-size: 42px;
-    font-weight: bold;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 0 25px red;
-}
-
-#jugar:active {
-    transform: scale(0.95);
-}
-
-/* BOTON CONECTAR */
-#conectar {
-    position: absolute;
-    bottom: 40px;
-    padding: 14px 30px;
-    font-size: 18px;
-    border-radius: 8px;
-    border: none;
-    background: #444;
-    color: white;
-    cursor: pointer;
-}
-
-#conectar:hover {
-    background: #666;
+button {
+  padding: 15px 30px;
+  font-size: 18px;
+  margin: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<img id="logo" src="logo.png" alt="Lugones Bar">
-
 <h1>Semáforo de Lugones</h1>
 
-<button id="jugar" onclick="jugar()">JUGAR</button>
+<div id="ruleta">?</div>
 
-<button id="conectar" onclick="conectar()">CONECTAR</button>
+<button onclick="conectar()">CONECTAR</button>
+<button onclick="jugar()">JUGAR</button>
+
+<audio id="ruletaSound" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/button/sounds/button-4.mp3"></audio>
+<audio id="loseSound" src="https://www.soundjay.com/button/sounds/button-10.mp3"></audio>
 
 <script>
-let device;
-let characteristic;
+let device, characteristic;
 
 async function conectar() {
-    device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: 'ESP32_Ruleta' }],
-        optionalServices: ['12345678-1234-1234-1234-123456789abc']
-    });
+  device = await navigator.bluetooth.requestDevice({
+    filters: [{ name: 'ESP32_Ruleta' }],
+    optionalServices: ['12345678-1234-1234-1234-123456789abc']
+  });
 
-    const server = await device.gatt.connect();
-    const service = await server.getPrimaryService('12345678-1234-1234-1234-123456789abc');
-    characteristic = await service.getCharacteristic('abcd1234-1234-1234-1234-abcdef123456');
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(
+    '12345678-1234-1234-1234-123456789abc'
+  );
 
-    alert("Conectado al Semáforo 🎉");
+  characteristic = await service.getCharacteristic(
+    'abcd1234-1234-1234-1234-abcdef123456'
+  );
+
+  characteristic.startNotifications();
+  characteristic.addEventListener('characteristicvaluechanged', evento);
+
+  alert("Conectado");
 }
 
 function jugar() {
-    if (!characteristic) {
-        alert("Primero conectá el Bluetooth");
-        return;
-    }
-    characteristic.writeValue(new TextEncoder().encode("J"));
+  if (!characteristic) return;
+
+  document.getElementById("ruleta").innerText = "🎰";
+  document.getElementById("ruleta").style.background = "gray";
+
+  document.getElementById("ruletaSound").play();
+  navigator.vibrate(300);
+
+  characteristic.writeValue(new TextEncoder().encode("J"));
+}
+
+function evento(e) {
+  const r = new TextDecoder().decode(e.target.value);
+
+  const div = document.getElementById("ruleta");
+
+  if (r === 'R') {
+    div.style.background = "red";
+    div.innerText = "ROJO ❌";
+    document.getElementById("loseSound").play();
+    navigator.vibrate([200,100,200]);
+  }
+  if (r === 'A') {
+    div.style.background = "yellow";
+    div.style.color = "black";
+    div.innerText = "AMARILLO 🔁";
+    navigator.vibrate(150);
+  }
+  if (r === 'V') {
+    div.style.background = "green";
+    div.innerText = "VERDE ✅";
+    document.getElementById("winSound").play();
+    navigator.vibrate([100,50,100,50,200]);
+  }
 }
 </script>
 
