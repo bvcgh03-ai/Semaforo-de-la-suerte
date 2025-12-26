@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Semáforo de la Suerte</title>
+<style>
+body {
+  background:#111;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+  padding-top:60px;
+}
+button {
+  font-size:2em;
+  padding:20px 40px;
+  border-radius:15px;
+  border:none;
+  background:#00e676;
+}
+</style>
+</head>
+<body>
+
+<h1>🎰 Semáforo de la Suerte</h1>
+<button onclick="conectar()">CONECTAR</button>
+<br><br>
+<button onclick="jugar()">JUGAR</button>
+
+<script>
+let device, characteristic;
+
+const serviceUUID = '12345678-1234-1234-1234-1234567890ab';
+const charUUID    = 'abcd1234-1234-5678-1234-abcdef123456';
+
+async function conectar() {
+  device = await navigator.bluetooth.requestDevice({
+    filters: [{ name: 'ESP32_Ruleta' }],
+    optionalServices: [serviceUUID]
+  });
+
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(serviceUUID);
+  characteristic = await service.getCharacteristic(charUUID);
+
+  alert("Conectado al ESP32 🎉");
+}
+
+function jugar() {
+  if (!characteristic) {
+    alert("Primero conectá el Bluetooth");
+    return;
+  }
+  characteristic.writeValue(new TextEncoder().encode("JUGAR"));
+}
+</script>
+
+</body>
+</html>
