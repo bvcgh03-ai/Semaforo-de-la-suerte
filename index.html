@@ -7,44 +7,25 @@
 
 <style>
 body {
-  margin: 0;
   background: black;
   color: white;
-  font-family: Arial, sans-serif;
-  height: 100vh;
+  font-family: Arial;
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 100vh;
 }
 
-#contenedor {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-}
-
-#logoBtn {
+#logo {
   width: 220px;
-  height: 220px;
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 0 25px white;
-  transition: transform 0.1s;
-}
-
-#logoBtn:active {
-  transform: scale(0.95);
 }
 
 #resultado {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: #222;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 22px;
+  margin-left: 40px;
+  font-size: 40px;
   font-weight: bold;
 }
 </style>
@@ -52,44 +33,24 @@ body {
 
 <body>
 
-<div id="contenedor">
-  <!-- BOTÓN ÚNICO -->
-  <img src="logo.png" id="logoBtn" onclick="jugar()">
-
-  <!-- RESULTADO -->
-  <div id="resultado">---</div>
-</div>
-
-<audio id="ruletaSound" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3"></audio>
+<img src="logo.png" id="logo" onclick="jugar()">
+<div id="resultado">---</div>
 
 <script>
-let device, characteristic;
+let charac;
 
 async function jugar() {
-  // vibración
   if (navigator.vibrate) navigator.vibrate(200);
 
-  // sonido
-  document.getElementById("ruletaSound").play();
+  if (!charac) await conectar();
 
-  // conectar si no está conectado
-  if (!characteristic) {
-    await conectar();
-  }
-
-  // animación previa
-  const r = document.getElementById("resultado");
-  r.innerText = "🎰";
-  r.style.background = "#222";
-
-  // mandar orden al ESP32
-  characteristic.writeValue(
+  charac.writeValue(
     new TextEncoder().encode("J")
   );
 }
 
 async function conectar() {
-  device = await navigator.bluetooth.requestDevice({
+  const device = await navigator.bluetooth.requestDevice({
     filters: [{ name: 'ESP32_Ruleta' }],
     optionalServices: ['12345678-1234-1234-1234-123456789abc']
   });
@@ -99,34 +60,21 @@ async function conectar() {
     '12345678-1234-1234-1234-123456789abc'
   );
 
-  characteristic = await service.getCharacteristic(
+  charac = await service.getCharacteristic(
     'abcd1234-1234-1234-1234-abcdef123456'
   );
 
-  characteristic.startNotifications();
-  characteristic.addEventListener(
+  charac.startNotifications();
+  charac.addEventListener(
     'characteristicvaluechanged',
-    mostrarResultado
+    e => {
+      const v = new TextDecoder().decode(e.target.value);
+      document.getElementById("resultado").innerText =
+        v === 'R' ? '🔴 ROJO' :
+        v === 'A' ? '🟡 AMARILLO' :
+        '🟢 VERDE';
+    }
   );
-}
-
-function mostrarResultado(e) {
-  const valor = new TextDecoder().decode(e.target.value);
-  const r = document.getElementById("resultado");
-
-  if (valor === 'R') {
-    r.style.background = "red";
-    r.innerText = "ROJO";
-  }
-  if (valor === 'A') {
-    r.style.background = "yellow";
-    r.style.color = "black";
-    r.innerText = "AMARILLO";
-  }
-  if (valor === 'V') {
-    r.style.background = "green";
-    r.innerText = "VERDE";
-  }
 }
 </script>
 
