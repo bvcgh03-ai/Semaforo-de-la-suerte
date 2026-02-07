@@ -16,6 +16,13 @@ body {
   height: 100vh;
 }
 
+.contenedor {
+  display: flex;
+  flex-direction: column;   /* 🔹 uno debajo del otro */
+  align-items: center;      /* 🔹 centrado horizontal */
+  gap: 30px;                /* espacio entre logo y texto */
+}
+
 #logo {
   width: 220px;
   border-radius: 50%;
@@ -24,17 +31,19 @@ body {
 }
 
 #resultado {
-  margin-left: 40px;
   font-size: 40px;
   font-weight: bold;
+  text-align: center;
 }
 </style>
 </head>
 
 <body>
 
-<img src="logo.png" id="logo" onclick="jugar()">
-<div id="resultado">---</div>
+<div class="contenedor">
+  <img src="logo.png" id="logo" onclick="jugar()">
+  <div id="resultado">---</div>
+</div>
 
 <script>
 let charac;
